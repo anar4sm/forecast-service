@@ -1,0 +1,6 @@
+fastapi[all]
+uvicorn
+sqlmodel
+psycopg[binary]
+python-dotenv
+confluent-kafka
