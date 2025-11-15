@@ -163,7 +163,7 @@ Response (200):
   "start_date": "2025-11-15T00:00:00+01:00",
   "end_date": "2025-11-16T00:00:00+01:00",
   "total_forecast_mwh": 1250.75,
-  "breakdown_by_location": {
+  "by_location": {
     "Turkey": 450.25,
     "Bulgaria": 380.5,
     "Spain": 420.0
