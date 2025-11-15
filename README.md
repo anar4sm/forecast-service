@@ -1,6 +1,6 @@
 # Forecast Service
 
-A production-ready microservice for managing energy production forecasts across multiple power plants with real-time event streaming.
+A test microservice for managing energy production forecasts across multiple power plants with real-time event streaming.
 
 ## Overview
 
@@ -9,7 +9,11 @@ The **Forecast Service** is a RESTful API built with **FastAPI** and **PostgreSQ
 - Querying historical forecasts by plant or aggregated company-wide
 - Publishing position change events to **Kafka** for downstream consumption (real-time dashboards, analytics, etc.)
 
-The service follows a strict **layered architecture** (Controller → Service → Repository → Database) ensuring separation of concerns, testability, and maintainability.
+The service follows a **layered architecture** (Controller → Service → Repository).
+
+## Documentation
+
+- **System Architecture:** See [`FS_System_Architecture_v1-0_Anar_Mehdiyev.pdf`](FS_System_Architecture_v1-0_Anar_Mehdiyev.pdf) for Diagrams, API Specifications, Decision Log and Instructions.
 
 ---
 
@@ -17,84 +21,11 @@ The service follows a strict **layered architecture** (Controller → Service �
 
 | Component | Technology | Version | Purpose |
 |-----------|-----------|---------|---------|
-| **Runtime** | Python | 3.11+ | Application runtime |
-| **Web Framework** | FastAPI | Latest | RESTful API framework; async request handling |
+| **Runtime** | Python | 3.11+ |
+| **Web Framework** | FastAPI | RESTful API framework; async request handling |
 | **Database** | PostgreSQL | 15-alpine | Primary data store |
-| **ORM / Data Access** | SQLModel | Latest | SQLAlchemy-based models; Pydantic integration |
-| **Event Streaming** | Apache Kafka | 7.5.0 (Confluent) | Publish position-change events |
-| **Async Driver** | psycopg (async) | 3.x | PostgreSQL async client |
-| **Config Management** | python-dotenv | Latest | Environment variable loading |
-| **Orchestration** | Docker Compose | 3.8+ | Local multi-container environment |
-
----
-
-## Layered Architecture
-
-The service is organized into clear layers, each with a single responsibility:
-
-```
-┌─────────────────────────────────────────────────────────┐
-│           HTTP / REST Layer (FastAPI)                   │
-│   app/api/endpoints/forecasts.py                        │
-└──────────────────────┬──────────────────────────────────┘
-                       │ (request/response)
-┌──────────────────────▼──────────────────────────────────┐
-│        Service / Business Logic Layer                    │
-│   app/services/forecast_service.py                      │
-│   • Orchestrates repository & producer calls            │
-│   • Emits Kafka events on state changes                 │
-└──────────────────────┬──────────────────────────────────┘
-                       │ (commands)
-┌──────────────────────▼──────────────────────────────────┐
-│      Data Access / Repository Layer                      │
-│   app/repositories/forecast_repo.py                     │
-│   • Encapsulates all SQL queries                        │
-│   • Handles upserts, aggregations, filtering            │
-└──────────────────────┬──────────────────────────────────┘
-                       │ (SQL)
-┌──────────────────────▼──────────────────────────────────┐
-│         Database & Infrastructure Layer                  │
-│   app/db/session.py — SQLModel engine, sessions         │
-│   app/models/forecast.py — SQLModel entities            │
-│   app/services/kafka_producer.py — Event producer       │
-│   app/core/config.py — Environment configuration        │
-└──────────────────────┬──────────────────────────────────┘
-                       │ (connections)
-                ┌──────┴────────┐
-                │               │
-         ┌──────▼─────┐   ┌────▼──────┐
-         │ PostgreSQL │   │   Kafka   │
-         └────────────┘   └───────────┘
-```
-
-### Layer Responsibilities
-
-- **API / Endpoints** (`app/api/endpoints/forecasts.py`)
-  - Handle HTTP requests/responses
-  - Validate input schemas via Pydantic
-  - Wire dependencies (session, service)
-  - Return structured JSON responses
-
-- **Service** (`app/services/forecast_service.py`)
-  - Orchestrate repository and producer calls
-  - Implement business rules and workflows
-  - Emit domain events (Kafka publish)
-  - Coordinate multi-step operations
-
-- **Repository** (`app/repositories/forecast_repo.py`)
-  - Execute SQL queries and mutations
-  - Provide query builders for filtering/aggregation
-  - Abstract database schema from service layer
-
-- **Models** (`app/models/forecast.py`)
-  - SQLModel ORM classes (map to DB tables)
-  - Pydantic schemas for validation
-  - Serialization/deserialization logic
-
-- **Config & Infrastructure** (`app/core/config.py`, `app/db/session.py`, `app/services/kafka_producer.py`)
-  - Read environment variables
-  - Manage database connections and sessions
-  - Configure and manage Kafka producer
+| **Event Streaming** | Apache Kafka | 7.5.0 |
+| **Orchestration** | Docker Compose | 3.8+ |
 
 ---
 
@@ -106,6 +37,7 @@ The service is organized into clear layers, each with a single responsibility:
 PUT /forecasts/
 Content-Type: application/json
 
+Request body
 {
   "plant_id": "TR_001",
   "forecast_timestamp": "2025-11-15T14:00:00Z",
@@ -189,12 +121,12 @@ Response (200):
   - OR **Python 3.11+** and **PostgreSQL** (for local development)
 - **Git** (to clone the repository)
 
-### Option 1: Docker Compose (Recommended)
+### Option 1: Docker Compose
 
 #### 1. Clone and navigate to the project:
 
 ```powershell
-cd C:\Dev\forecast-service
+cd <repo-folder>\forecast-service
 ```
 
 #### 2. Build and start all services:
@@ -284,12 +216,12 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 The app will:
 - Create database tables on startup
-- Seed initial power plants
-- Start the Uvicorn server on `http://localhost:8000`
+- Load initial power plants
+- Start the server on `http://localhost:8000`
 
 ---
 
-## Seeding Test Data
+## Loading Test Data
 
 A helper script `scripts/seed_forecasts.py` populates the database with sample forecasts.
 
@@ -321,7 +253,17 @@ Ensure the API is running locally on `http://localhost:8000` before running the 
 
 ## Testing & Verification
 
-### Test API Endpoints (Browser Console)
+### Test API Endpoints
+
+#### Option 1. Swagger UI
+
+Open your browser and navigate to:
+```
+http://localhost:8000/docs
+```
+This opens an interactive **Swagger UI** where you can test all endpoints.
+
+#### Option 2. Browser Console
 
 Open your browser and press `F12` to open Developer Tools, then paste:
 
@@ -369,14 +311,6 @@ docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 --list
 docker compose exec kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic position_changes --from-beginning --max-messages 10
 ```
 
-#### Use kcat for quick inspection:
-
-```powershell
-docker run --rm edenhill/kcat:1.7.0 -b localhost:9092 -t position_changes -C -o beginning -c 10
-```
-
----
-
 ## Project Structure
 
 ```
@@ -386,8 +320,6 @@ forecast-service/
 ├── requirements.txt                 # Python dependencies
 ├── .env.example                     # Example environment variables
 ├── README.md                        # This file
-├── CLASSES.md                       # Class & module reference manual
-├── DIAGRAM.md                       # Architecture & sequence diagrams
 │
 ├── app/
 │   ├── main.py                      # FastAPI app, startup/shutdown hooks
@@ -396,27 +328,27 @@ forecast-service/
 │   ├── db/
 │   │   └── session.py               # SQLModel engine, session factory, table creation
 │   ├── models/
-│   │   └── forecast.py              # ORM models & Pydantic schemas
+│   │   └── forecast.py              # Models
 │   ├── repositories/
-│   │   └── forecast_repo.py         # Data access layer (queries, upserts)
+│   │   └── forecast_repo.py         # Repository layer (queries)
 │   ├── services/
 │   │   ├── forecast_service.py      # Business logic orchestration
-│   │   └── kafka_producer.py        # Kafka producer wrapper
+│   │   └── kafka_producer.py        # Kafka producer
 │   └── api/
 │       └── endpoints/
-│           └── forecasts.py         # API route handlers
+│           └── forecasts.py         # API router
 │
 ├── scripts/
-│   └── seed_forecasts.py            # Helper to populate sample forecasts
+│   └── seed_forecasts.py            # Helper to populate sample data
 │
-└── tests/                           # Unit & integration tests (to be expanded)
+└── tests/                           # Unit & integration tests (to be added)
 ```
 
 ---
 
 ## Environment Variables
 
-Configuration is managed via environment variables (loaded by `app/core/config.py`):
+Configuration is managed via environment variables:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
@@ -469,44 +401,8 @@ Configuration is managed via environment variables (loaded by `app/core/config.p
 
 ---
 
-## Development & Contributing
+## License/Disclaimer
 
-### Running Tests (WIP)
-
-```powershell
-pytest tests/ -v
-```
-
-### Code Style & Linting
-
-```powershell
-black app/ scripts/
-flake8 app/ scripts/
-```
-
-### Adding New Endpoints
-
-1. Define request/response schemas in `app/models/forecast.py`
-2. Add repository methods in `app/repositories/forecast_repo.py`
-3. Add service methods in `app/services/forecast_service.py`
-4. Add route handler in `app/api/endpoints/forecasts.py`
-5. Wire dependencies via `Depends()`
+This project is for testing purpose only. The author is not responsible for any consequences within usage or implementation of the solution/code.
 
 ---
-
-## Additional Documentation
-
-- **Class & Module Reference:** See [`CLASSES.md`](CLASSES.md) for detailed descriptions of each class, variable, and method.
-- **Architecture Diagrams:** See [`DIAGRAM.md`](DIAGRAM.md) for Mermaid flowcharts and sequence diagrams.
-
----
-
-## License
-
-This project is proprietary. All rights reserved.
-
----
-
-## Support
-
-For questions or issues, contact the development team or refer to the troubleshooting section above.
