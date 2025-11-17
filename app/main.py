@@ -18,7 +18,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Forecast Service API",
     version="1.0.0",
-    description="Microservice for managing forecasts."
+    description="Microservice for managing forecasts.",
+    lifespan=lifespan,
 )
 
 app.include_router(forecasts.router, prefix="/api/v1")
