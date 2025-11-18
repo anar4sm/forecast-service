@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 BASE = "http://localhost:8000/api/v1/forecasts"
 PLANTS = ["TR_001", "BG_001", "ES_001"]
-start = datetime(2025, 11, 14, 0, 0)
+start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
 
 payloads = []
 for hour in range(24):

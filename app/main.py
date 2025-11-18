@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from app.db.session import create_db_and_tables, engine, seed_initial_data, Session
+from app.db.session import create_db_and_tables, engine, seed_initial_data, seed_initial_forecasts, Session 
 from app.api.endpoints import forecasts
 
 @asynccontextmanager
@@ -11,6 +11,7 @@ async def lifespan(app: FastAPI):
     # Seed initial plants (Turkey, Bulgaria, Spain)
     with Session(engine) as session:
         seed_initial_data(session)
+        seed_initial_forecasts(session)
         
     yield
     print("Shutdown: Cleanup completed.")

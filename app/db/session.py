@@ -1,6 +1,7 @@
 from typing import Generator
 from sqlmodel import create_engine, SQLModel, Session, select
 from app.models.forecast import ForecastEstimate, PowerPlant
+from datetime import datetime, timedelta
 
 DATABASE_URL = "postgresql+psycopg://user:password@db:5432/forecastdb" 
 
@@ -25,3 +26,26 @@ def seed_initial_data(session: Session) -> None:
 
     session.add_all(plants)
     session.commit()
+
+def seed_initial_forecasts(session: Session) -> None:
+    if session.exec(select(ForecastEstimate)).first():
+        return
+    
+    start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
+    
+    payloads = []
+    
+    for hour in range(24):
+        ts = (start + timedelta(hours=hour)).isoformat() + "Z"
+        payloads.extend(
+            [
+                ForecastEstimate(plant_id="TR_001", forecast_timestamp=ts, estimated_production_mwh=50 + hour * 0.5),
+                ForecastEstimate(plant_id="BG_001", forecast_timestamp=ts, estimated_production_mwh=30 + hour * 0.3),
+                ForecastEstimate(plant_id="ES_001", forecast_timestamp=ts, estimated_production_mwh=20 + hour * 0.2)
+            ]
+        )
+    
+    session.add_all(payloads)
+    session.commit()
+
+    print("Done. Test data loaded.")

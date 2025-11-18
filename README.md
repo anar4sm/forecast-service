@@ -228,7 +228,6 @@ A helper script `scripts/seed_forecasts.py` populates the database with sample f
 #### Run inside the Docker container:
 
 ```powershell
-docker compose exec forecast-service pip install requests --quiet
 docker compose exec forecast-service python scripts/seed_forecasts.py
 ```
 
@@ -238,7 +237,7 @@ OK: TR_001 2025-11-15T00:00:00Z -> 1
 OK: BG_001 2025-11-15T00:00:00Z -> 2
 OK: ES_001 2025-11-15T00:00:00Z -> 3
 ...
-Done. (72 forecasts seeded)
+Done. Test data loaded.
 ```
 
 #### Run locally (if using Option 2):
@@ -341,7 +340,7 @@ forecast-service/
 ├── scripts/
 │   └── seed_forecasts.py            # Helper to populate sample data
 │
-└── tests/                           # Unit & integration tests (to be added)
+└── ...../                           # Unit & integration tests (to be added)
 ```
 
 ---
